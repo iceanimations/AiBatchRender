@@ -45,7 +45,7 @@ def ai_render(file_path=None):
 
     if file_path == None:
         file_path = r"\\ice-089\public\maya\scenes\cylinder.ma"
-        
+    
     lastPixel = -1
     yEnd = quotient - 1
     count = 1
