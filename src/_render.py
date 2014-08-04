@@ -33,7 +33,7 @@ def ai_render(file_path=None):
     '''renders the scene in chuncks by sending each chunck
     to a sepearate computer using psexec.exe'''
 
-    nodes = ['\\\\ice-089', '\\\\ice-088', '\\\\ice-067']
+    nodes = ['\\\\ice-089', '\\\\ice-088']
 
     #res = pc.ls(type='resolution')[0]
     width = 500 #res.width.get()
@@ -52,7 +52,8 @@ def ai_render(file_path=None):
     commands = []
     for node in nodes:
         name = osp.splitext(osp.basename(file_path))[0] +"_"+ str(count).zfill(3)
-        command = "render.exe -proj \\\\ice-089\\public\\maya -r arnold -im "+ name+ " -reg %s %s %s %s %s"%(0, width-1, lastPixel+1, yEnd, file_path)
+        name = osp.join(user, name)
+        command = "render.exe -r arnold -im "+ name+ " -reg %s %s %s %s %s"%(0, width-1, lastPixel+1, yEnd, file_path)
         commands.append(command)
         lastPixel = yEnd
         yEnd += quotient
