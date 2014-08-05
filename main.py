@@ -1,6 +1,6 @@
-import site.addsitedir as asd
-asd(r"r:/pipe_repo/users/qurban/utilities")
-asd(r"r:/Python_Scripts")
+import site
+site.addsitedir(r"R:\Pipe_Repo\Users\Qurban\utilities")
+site.addsitedir(r"r:/Python_Scripts")
 import src._window as window
 reload(window)
 import sys
@@ -12,8 +12,14 @@ except:
     app = True
 
 def run():
+    global app
     if app:
         app = QApplication(sys.argv)
-    window.Window().show()
+    global win
+    win = window.Window()
+    win.show()
     if app:
         sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    run()

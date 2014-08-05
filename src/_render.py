@@ -4,47 +4,62 @@ Created on Jul 17, 2014
 @author: qurban.ali
 '''
 
-#import pymel.core as pc
-#import maya.cmds as cmds
 import os.path as osp
 import os
 import subprocess
-import multiprocessing as mp
+import re
+import _sysinfo as si
+reload(si)
+import maya.cmds as cmds
+import pymel.core as pc
 user = osp.expanduser('~')
+__maya_version__ = re.search('\\d{4}', pc.about(v=True)).group()
 
-def find_live_nodes():
+def find_live_nodes(uname, pswd):
     '''returns the list of all connected computers in a LAN'''
     os.system('net view > conn.tmp')
     f = open('conn.tmp', 'r')
     f.readline();f.readline();f.readline()
     
+    tempFile = osp.join(user, 'tempfile.bat')
+    
     conn = []
     host = f.readline()
     while host[0] == '\\':
-        conn.append(host[2:host.find(' ')])
+        conn.append(host[:host.find(' ')])
         host = f.readline()
     f.close()
-    return conn
+    print conn
+    #conn = ['\\ICE-088', '\\ICE-089']
+    systems = []
+    good_systems = []
+    for con in conn:
+        result = re.match('\\\\\\\\ICE-\\d{3}', con)
+        if result:
+            systems.append(con)
+    print systems
+    f = open(tempFile, 'w+')
+    f.write('call \\\\nas\\storage\\scripts\\mount.bat\n'+
+            'R:\\Pipe_Repo\\Users\\Qurban\\applications\\Python26\\python.exe R:\\Pipe_Repo\\Users\\Qurban\\utilities\\sysinfo.py '+__maya_version__)
+    f.close()
+    for systm in systems:
+        os.system('psexec \\'+systm+' -u ICEANIMATIONS\\'+uname+' -p '+pswd+' -c -f '+tempFile)
+    for syst in systems:
+        if si.get_info(syst):
+            good_systems.append(syst)
+    return good_systems
 
-def submit_job(command):
-    subprocess.call(command)
-
-def ai_render(file_path=None):
+def ai_render(uname, pswd, project_path, nodes, file_path=r'\\ice-089\public\maya\scence\cylinder.ma'):
     '''renders the scene in chuncks by sending each chunck
     to a sepearate computer using psexec.exe'''
 
-    nodes = ['\\\\ice-089', '\\\\ice-088']
-
-    #res = pc.ls(type='resolution')[0]
-    width = 500 #res.width.get()
-    height = 500 #res.height.get()
+    res = pc.ls(type='resolution')[0]
+    width = res.width.get()
+    height = res.height.get()
 
     numNodes = len(nodes)
     quotient = height/numNodes
     remender = height%numNodes
-
-    if file_path == None:
-        file_path = r"\\ice-089\public\maya\scenes\cylinder.ma"
     
     lastPixel = -1
     yEnd = quotient - 1
@@ -52,8 +67,7 @@ def ai_render(file_path=None):
     commands = []
     for node in nodes:
         name = osp.splitext(osp.basename(file_path))[0] +"_"+ str(count).zfill(3)
-        name = osp.join(user, name)
-        command = "render.exe -r arnold -im "+ name+ " -reg %s %s %s %s %s"%(0, width-1, lastPixel+1, yEnd, file_path)
+        command = "render.exe -proj "+project_path+" -r arnold -im "+ name+ " -reg %s %s %s %s %s"%(0, width-1, lastPixel+1, yEnd, file_path)
         commands.append(command)
         lastPixel = yEnd
         yEnd += quotient
@@ -61,7 +75,7 @@ def ai_render(file_path=None):
             if remender > 0:
                 count += 1
                 name = osp.splitext(osp.basename(file_path))[0] +"_"+ str(count)
-                command = "render.exe -proj \\\\ice-089\\public\\maya -r arnold -im "+ name+ " -reg %s %s %s %s %s"%(0, width-1, lastPixel+1, lastPixel+remender, file_path)
+                command = "render.exe -proj "+project_path+" -r arnold -im "+ name+ " -reg %s %s %s %s %s"%(0, width-1, lastPixel+1, lastPixel+remender, file_path)
                 commands.append(command)
         count += 1
     nodeCount = 0
@@ -72,12 +86,12 @@ def ai_render(file_path=None):
         fullFileName = osp.join(user, fileName)
         f = open(fullFileName, 'w+')
         f.write("call \\\\nas\\storage\\scripts\\mount.bat"+
-                "\nset MAYA_RENDER_DESC_PATH=C:\\solidangle\\mtoadeploy\\2013"+
-                "\nset PATH=C:\\solidangle\\mtoadeploy\\2013\\bin;%path%"+
-                "\nset MAYA_MODULE_PATH=C:\\solidangle\\mtoadeploy\\2013"+
-                "\nset MAYA_PLUG_IN_PATH=C:\\solidangle\\mtoadeploy\\2013\\plug-ins"+
-                "\nset PATH=C:\\Program Files\\Autodesk\Maya2013\\bin;%path%\n" + cmd)
+                "\nset MAYA_RENDER_DESC_PATH=C:\\solidangle\\mtoadeploy\\"+__maya_version__+
+                "\nset PATH=C:\\solidangle\\mtoadeploy\\"+__maya_version__+"\\bin;%path%"+
+                "\nset MAYA_MODULE_PATH=C:\\solidangle\\mtoadeploy\\"+__maya_version__+
+                "\nset MAYA_PLUG_IN_PATH=C:\\solidangle\\mtoadeploy\\"+__maya_version__+"\\plug-ins"+
+                "\nset PATH=C:\\Program Files\\Autodesk\Maya"+__maya_version__+"\\bin;%path%\n" + cmd)
         f.close()
-        psexec = r"psexec -d "+ nodes[nodeCount] +" -u ICEANIMATIONS\qurban.ali -p 13490 -c -f "+ fullFileName
+        psexec = "psexec -d \\"+ nodes[nodeCount] +" -u ICEANIMATIONS\\"+uname+" -p "+pswd+" -c -f "+ fullFileName
         os.system(psexec)
         nodeCount += 1
