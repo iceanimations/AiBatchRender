@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>230</width>
-    <height>190</height>
+    <height>215</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,17 +19,17 @@
   <property name="minimumSize">
    <size>
     <width>230</width>
-    <height>190</height>
+    <height>215</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>230</width>
-    <height>190</height>
+    <height>215</height>
    </size>
   </property>
   <property name="windowTitle">
-   <string>Slave Render</string>
+   <string>Sliced Render</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -85,6 +85,16 @@
        </widget>
       </item>
      </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="statusLabel">
+      <property name="styleSheet">
+       <string>color: green</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
