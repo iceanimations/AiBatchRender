@@ -29,8 +29,7 @@ def find_live_nodes(uname, pswd):
         conn.append(host[:host.find(' ')])
         host = f.readline()
     f.close()
-    print conn
-    #conn = ['\\ICE-088', '\\ICE-089']
+    #conn = ['\\ICE-088', '\\ICE-089', '\\ICE-185', '\\ICE-099', '\\ICE-131']
     systems = []
     good_systems = []
     for con in conn:
@@ -49,10 +48,13 @@ def find_live_nodes(uname, pswd):
             good_systems.append(syst)
     return good_systems
 
-def ai_render(uname, pswd, project_path, nodes, file_path=r'\\ice-089\public\maya\scence\cylinder.ma'):
+def ai_render(uname, pswd, project_path, nodes, file_path=cmds.file(location=True, q=True)):
     '''renders the scene in chuncks by sending each chunck
     to a sepearate computer using psexec.exe'''
 
+    if file_path == 'unknown':
+        pc.warning("Save the file first")
+        return
     res = pc.ls(type='resolution')[0]
     width = res.width.get()
     height = res.height.get()

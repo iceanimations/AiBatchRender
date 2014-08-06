@@ -74,7 +74,7 @@ class Window(Form, Base):
         if not nodes:
             pc.warning("No machine ready to render")
         else:
-            self.statusBar().showMessage((str(len(nodes))+" nodes ready"), 2000)
+            self.statusBar.showMessage((str(len(nodes))+" nodes ready"), 2000)
             qApp.processEvents()
             
         ren.ai_render(username, password, project, nodes)
