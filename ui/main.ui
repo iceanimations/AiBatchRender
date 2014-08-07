@@ -89,7 +89,7 @@
     <item>
      <widget class="QLabel" name="statusLabel">
       <property name="styleSheet">
-       <string>color: green</string>
+       <string notr="true">color: lightgreen</string>
       </property>
       <property name="text">
        <string/>
@@ -147,7 +147,7 @@
      <x>0</x>
      <y>0</y>
      <width>230</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

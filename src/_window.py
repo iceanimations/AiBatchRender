@@ -5,29 +5,29 @@ Created on Aug 4, 2014
 '''
 import site
 site.addsitedir(r"R:\Pipe_Repo\Users\Qurban\utilities")
-site.addsitedir(r"R:/python_scripts")
-#from uiContainer import uic
-from PyQt4 import uic
+from uiContainer import uic
 from PyQt4.QtGui import QFileDialog, qApp
 import os
-#import pymel.core as pc
-#import qtify_maya_window as qtfy
+import pymel.core as pc
+import qtify_maya_window as qtfy
 import os.path as osp
 import re
-#import maya.cmds as cmds
+import maya.cmds as cmds
 import multiprocessing as mp
+from multiprocessing.pool import ThreadPool
+import subprocess
 
 directory = r'\\nas\storage\.db\ai_batch_render'
-__maya_version__ = '2013' #re.search('\\d{4}', pc.about(v=True)).group()
+__maya_version__ = re.search('\\d{4}', pc.about(v=True)).group()
 user = osp.expanduser('~')
 rootPath = osp.dirname(osp.dirname(__file__))
 
 def submit_job(command):
-    os.system(command)
+    subprocess.call(command, shell=True)
 
 Form, Base = uic.loadUiType("%s/ui/main.ui"%rootPath)
 class Window(Form, Base):
-    def __init__(self, parent=None):
+    def __init__(self, parent=qtfy.getMayaWindow()):
         super(Window, self).__init__(parent)
         self.setupUi(self)
         
@@ -53,19 +53,19 @@ class Window(Form, Base):
         password = str(self.passwordBox.text())
         project = str(self.projectBox.text())
         if not osp.exists(project):
-            #pc.warning("project path does not exist")
+            pc.warning("project path does not exist")
             return
         if not username:
-            #pc.warning("username not specified")
+            pc.warning("username not specified")
             return
         if not password:
-            #pc.warning("password not specified")
+            pc.warning("password not specified")
             return
         self.statusLabel.setText('Checking remote systems...')
         qApp.processEvents()
         nodes = self.find_live_nodes(username, password)
         if not nodes:
-            #pc.warning("No machine ready to render")
+            pc.warning("No machine ready to render")
             return
         else:
             self.statusLabel.setText(str(len(nodes))+' systems ready')
@@ -96,11 +96,11 @@ class Window(Form, Base):
             conn.append(host[:host.find(' ')])
             host = f.readline()
         f.close()
-        conn = ['\\ICE-088', '\\ICE-089', '\\ICE-185', '\\ICE-099', '\\ICE-131']
+        #conn = ['\\ICE-088', '\\ICE-089', '\\ICE-185', '\\ICE-099', '\\ICE-131']
         systems = []
         good_systems = []
         for con in conn:
-            result = re.match('\\\\ICE-\\d{3}', con)
+            result = re.match('\\\\\\\\ICE-\\d{3}', con)
             if result:
                 systems.append(con)
         print systems
@@ -109,22 +109,22 @@ class Window(Form, Base):
                 'R:\\Pipe_Repo\\Users\\Qurban\\applications\\Python26\\python.exe R:\\Pipe_Repo\\Users\\Qurban\\utilities\\sysinfo.py '+__maya_version__)
         f.close()
         for systm in systems:
-            os.system('psexec \\'+systm+' -u ICEANIMATIONS\\'+uname+' -p '+pswd+' -c -f '+tempFile)
+            subprocess.call('psexec \\'+systm+' -u ICEANIMATIONS\\'+uname+' -p '+pswd+' -c -f '+tempFile, shell=True)
         for syst in systems:
             if self.get_info(syst):
                 good_systems.append(syst)
         return good_systems
     
-    def ai_render(self, uname, pswd, project_path, nodes, file_path='\\\\ice-089\\public\\maya\\scenes\\cylinder.ma'):
+    def ai_render(self, uname, pswd, project_path, nodes, file_path=cmds.file(location=True, q=True)):
         '''renders the scene in chuncks by sending each chunck
         to a sepearate computer using psexec.exe'''
     
         if file_path == 'unknown':
-            #pc.warning("Save the file first")
+            pc.warning("Save the file first")
             return
-        #res = pc.ls(type='resolution')[0]
-        width = 500 #res.width.get()
-        height = 500 #res.height.get()
+        res = pc.ls(type='resolution')[0]
+        width = res.width.get()
+        height = res.height.get()
     
         numNodes = len(nodes)
         quotient = height/numNodes
@@ -164,7 +164,7 @@ class Window(Form, Base):
             f.close()
             psexecCommands.append("psexec \\"+ nodes[nodeCount] +" -u ICEANIMATIONS\\"+uname+" -p "+pswd+" -c -f "+ fullFileName)
             nodeCount += 1
-        pool = mp.Pool(processes=len(psexecCommands))
+        pool = ThreadPool(processes=len(psexecCommands))
         itr = pool.imap_unordered(submit_job, psexecCommands)
         done = []
         self.statusLabel.setText('0 of '+str(len(psexecCommands))+' done')
